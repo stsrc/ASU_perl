@@ -39,9 +39,10 @@ sub parse_data {
 	my @parsed;
 	my $line = $_[0];
 
-	@parsed = split(/\./, $line);
+	my($parsed_date, $parsed_note) = split(/ /, $line, 2);
+	@parsed = split(/\./, $parsed_date);
 
-	return (@parsed[0], @parsed[1], @parsed[2], @parsed[3]);
+	return (@parsed[0], @parsed[1], @parsed[2], $parsed_note);
 }
 
 
