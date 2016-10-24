@@ -6,14 +6,10 @@ use Date::Calc qw(:all);
 use Switch;
 
 format cal_entry =
-@####.@##.@##. @*
-$year, $month, $day, $day_of_w_txt
-     @*
-$notes
+--------------------------------------------------------------------------------
+@####.@##.@##. @* @*
+$year, $month, $day, $day_of_w_txt, $notes
 .
-
-select(STDOUT);
-$~ = "cal_entry";
 
 @file_arr;
 $arr_cnt = 0;
@@ -102,6 +98,11 @@ sub parse_input_args {
 	return ($days, $notes_path);
 }
 
+open(cal_entry, ">", "calendar.txt");
+select(STDOUT);
+$~ = "cal_entry";
+
+
 
 ($loop_size, $file_path) = parse_input_args();
 
@@ -129,12 +130,11 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	$notes = "";
 	
 	if ($day == $day_f && $month == $month_f && $year == $year_f) {
-		$notes = $notes_f;
+		$notes = "\n\n"."        ".$notes_f."\n";
 		($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);	
 		$arr_cnt++;	
 	}
-	
-	write;
+	write(cal_entry);
 
 	$index++;
 	if ($month == 12 && $day == 31) {
@@ -142,6 +142,8 @@ for (my $i = 0; $i < $loop_size; $i++) {
 		$index = 0;
 	}
 }
+print cal_entry "--------------------------------------------------------------------------------\n";
+close(cal_entry);
 
 #output jaki chce:
 #------------------
