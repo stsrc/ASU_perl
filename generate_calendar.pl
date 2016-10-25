@@ -5,14 +5,16 @@ use Date::Calendar;
 use Date::Calc qw(:all);
 use Switch;
 
-format cal_entry =
+format cal_entry_tex =
+\noindent @####.@##.@##. @* @* @* @*
+$year, $month, $day, $day_of_w_txt, $nl_before_notes, $notes, $newline
+.
+
+format cal_entry_txt =
 --------------------------------------------------------------------------------
 @####.@##.@##. @* @*
 $year, $month, $day, $day_of_w_txt, $notes
 .
-
-@file_arr;
-$arr_cnt = 0;
 
 sub read_file {
 	my @file_arr;
@@ -39,6 +41,16 @@ sub parse_data {
 	return (@parsed[0], @parsed[1], @parsed[2], $parsed_note);
 }
 
+sub print_args_info {
+	print "\nWrong input arguments.\n";
+	print "Use one of specific arguments pair:\n";
+	print "\"-d [count]\" for number of days to print.\n";
+	print "\"-w [count]\" for number of weeks to print.\n";
+	print "\"-m [count]\" for number of months to print.\n";
+	print "\nAdditionally:\n \"-p [path]\" to write path to the notes file\n";
+	print "\"-s [path]\" to save file to specific file\"\n\n";
+}
+
 sub parse_input_args {
 	my $type = 0;
 	my $arg_val = 0;
@@ -46,6 +58,12 @@ sub parse_input_args {
 	my $notes_path = "notes.txt";
 	my $cnt = scalar @ARGV;
 	my $i = 0;
+	my $save_path;
+
+	if ($cnt == 0) {
+		print_args_info();
+		exit(1);
+	}
 
 	while ($i != $cnt) {
 
@@ -65,7 +83,7 @@ sub parse_input_args {
 				my $year = 0;
 				my $month = 0;
 				my $day = 0;
-				($year, $month, $day) = Today(); #TODO GMT AS parameter
+				($year, $month, $day) = Today();
 				$tmp += Days_in_Month($year, $month) - $day + 1;
 				$month++;
 				for (my $j = 0; $j < $arg_val - 1; $j++) {
@@ -80,43 +98,52 @@ sub parse_input_args {
 			}
 
 			case /-p/ {
-				$notes_path = $arg_val
+				$notes_path = $arg_vail;
+			}
+			
+			case /-s/ {
+				$save_path = $arg_val;
 			}
 
 			else {
-				print "Wrong input arguments.\n";
-				print "Use one of specific arguments pair:\n";
-				print "\"-d [count]\" for number of days to print.\n";
-				print "\"-w [count]\" for number of weeks to print.\n";
-				print "\"-m [count]\" for number of months to print.\n\n";
-				print "Additionally to write path to the notes file, write:\n";
-				print "\"-p [path]\"\n";
+				print_args_info();
 				break;
 			}
 		}
 	}
-	return ($days, $notes_path);
+	if (length ($save_path) == 0) {
+		$save_path = "calendar.tex";
+	}
+	return ($days, $notes_path, $save_path);
 }
 
-open(cal_entry, ">", "calendar.txt");
 select(STDOUT);
-$~ = "cal_entry";
+$~ = "cal_entry_tex";
 
 
 
-($loop_size, $file_path) = parse_input_args();
+($loop_size, $file_path, $save_path) = parse_input_args();
+
+open(cal_entry_tex, ">", $save_path);
 
 @file_arr = read_file($file_path);
 
+$arr_cnt = 0;
 ($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);
 $arr_cnt++;
 
-$calendar = Date::Calendar->new($Profiles->{'US-FL'}); #TODO POL-WAW
+$calendar = Date::Calendar->new($Profiles->{'US-FL'});
 
-($year, $month, $day) = Today(); #TODO GMT as parameter
+($year, $month, $day) = Today();
 
 $date_year = $calendar->year($year);
 $index = $calendar->date2index($year, $month, $day);
+
+print cal_entry_tex "\\documentclass[12pt, a4paper, oneside]{article}";
+print cal_entry_tex "\\title{Calendar}";
+print cal_entry_tex "\\author{Konrad Gotfryd}";
+print cal_entry_tex "\\begin{document}";
+print cal_entry_tex "\\maketitle";
 
 for (my $i = 0; $i < $loop_size; $i++) {
 	$date = $date_year->index2date($index);
@@ -130,11 +157,23 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	$notes = "";
 	
 	if ($day == $day_f && $month == $month_f && $year == $year_f) {
-		$notes = "\n\n"."        ".$notes_f."\n";
+		$notes = $notes_f;
 		($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);	
 		$arr_cnt++;	
 	}
-	write(cal_entry);
+
+	if (length($notes) != 0) {
+		$nl_before_notes = "\\par";	
+	} else {
+		$nl_before_notes = "";
+	}
+
+	if ($i + 1 != $loop_size) {
+		$newline = "\\\\";
+	} else {
+		$newline = "";
+	}
+	write(cal_entry_tex);
 
 	$index++;
 	if ($month == 12 && $day == 31) {
@@ -142,11 +181,6 @@ for (my $i = 0; $i < $loop_size; $i++) {
 		$index = 0;
 	}
 }
-print cal_entry "--------------------------------------------------------------------------------\n";
-close(cal_entry);
 
-#output jaki chce:
-#------------------
-#01.01.01 monday
-#--notes--
-#------------------
+print cal_entry_tex "\\end{document}";
+close(cal_entry_tex);
