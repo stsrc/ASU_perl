@@ -8,14 +8,17 @@ use Switch;
 
 format cal_entry_tex =
 \noindent @*.@*.@*. @* @* @* @*
-$year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes, $newline
+$year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes, $nl_after_notes
 .
 
 format cal_entry_txt =
---------------------------------------------------------------------------------
-@*.@*.@*. @* @*
-$year, ${month}, ${day}, $day_of_w_txt, $notes
+@*
+$dash_line
+@*.@*.@*. @* @* @*
+$year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes
 .
+
+$dash_line = "--------------------------------------------------------------------------------";
 
 sub read_file {
 	my @file_arr;
@@ -43,8 +46,7 @@ sub parse_data {
 }
 
 sub print_args_info {
-	print "\nWrong input arguments.\n";
-	print "Use one of specific arguments pair:\n";
+	print "\nUse one of specific argument:\n";
 	print "\"-d [count]\" for number of days to print.\n";
 	print "\"-w [count]\" for number of weeks to print.\n";
 	print "\"-m [count]\" for number of months to print.\n";
@@ -53,6 +55,12 @@ sub print_args_info {
 	print "\"-s [path]\" path to save output.\n";
 	print "\"-t [txt/tex]\" output type. txt is the default type.\n\n";
 }
+
+sub print_warn_args_info {
+	print "\nWrong input arguments.\n";
+	print_args_info();
+}
+
 
 sub parse_input_args {
 	my $type = 0;
@@ -115,12 +123,17 @@ sub parse_input_args {
 				} elsif ($arg_val eq "tex") {
 					$form_type = "cal_entry_tex";
 				} else {
-					print_args_info();
+					print_warn_args_info();
 					exit(1);
 				}
 			}
-			else {
+			case /-h.*/ {
 				print_args_info();
+				exit(1);
+			}
+
+			else {
+				print_warn_args_info();
 				exit(1);
 			}
 		}
@@ -128,31 +141,88 @@ sub parse_input_args {
 	return ($days, $notes_path, $save_path, $form_type);
 }
 
+sub write_header {
+	my $type = $_[0];
+	my $fh = $_[1];
+
+	if ($type eq "cal_entry_tex") {
+		print $fh "\\documentclass[12pt, a4paper, oneside]{article}";
+		print $fh "\\title{Calendar}";
+		print $fh "\\author{Konrad Gotfryd}";
+		print $fh "\\begin{document}";
+		print $fh "\\maketitle"; 
+	} else {
+		print $fh "\nCalendar\nAuthor: Konrad Gotfryd\n\n";
+	}
+}
+
+sub write_footer {
+	my $type = $_[0];
+	my $fh = $_[1];
+
+	if ($type eq "cal_entry_tex") {
+		print save_file "\\end{document}";
+	} else {
+		print save_file "$dash_line\n";
+	}
+}
+
+sub set_nl_before_notes {
+	my $type = $_[0];
+	my $notes = $_[1];
+	my $nl_before_notes;
+
+	if (length($notes) != 0) {
+		if ($type eq "cal_entry_tex") {
+			$nl_before_notes = "\\par";
+		} else {
+			$nl_before_notes = "\n     ";
+		}
+	} else {
+		$nl_before_notes = "";
+	}
+	return $nl_before_notes;	
+}
+
+sub set_nl_after_notes {
+	my $i = $_[0];
+	my $loop_size = $_[1];
+	my $type = $_[2];
+	
+	if ($type eq "cal_entry_txt") {
+		return "";
+	}
+
+	if ($i + 1 != $loop_size) {
+		return "\\\\";
+	} else {
+		return "";
+	}
+}
+
 ($loop_size, $file_path, $save_path, $type) = parse_input_args();
 
 open(save_file, ">", $save_path);
-if (openhandle(save_file) == undef) {
+unless (save_file) {
 	if (length $save_path != 0) {
 		print "Could not open file $save_path. Writing output";
-		print " to console.\n";
+		print " to the console.\n";
 	}
-	save_file = *STDOUT;
+	*save_file = STDOUT;
 }
 
-
-if (openhandle(save_file) != undef) {
-	select(save_file);
-} else {
-	select(STDOUT);
-}
+select(save_file);
 
 $~ = $type;
 @file_arr = read_file($file_path);
+
+write_header($type, save_file);
 
 $arr_cnt = 0;
 ($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);
 $arr_cnt++;
 
+#There is no PL-MA in profiles.
 $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 
 ($year, $month, $day) = Today();
@@ -160,19 +230,6 @@ $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 $date_year = $calendar->year($year);
 $index = $calendar->date2index($year, $month, $day);
 
-if ($type eq "cal_entry_tex" && openhandle(save_file) != undef) {
-	print save_file "\\documentclass[12pt, a4paper, oneside]{article}";
-	print save_file "\\title{Calendar}";
-	print save_file "\\author{Konrad Gotfryd}";
-	print save_file "\\begin{document}";
-	print save_file "\\maketitle";
-} elsif ($type eq "cal_entry_tex") {
-	print "\\documentclass[12pt, a4paper, oneside]{article}";
-	print "\\title{Calendar}";
-	print "\\author{Konrad Gotfryd}";
-	print "\\begin{document}";
-	print "\\maketitle";
-}
 
 for (my $i = 0; $i < $loop_size; $i++) {
 	$date = $date_year->index2date($index);
@@ -191,17 +248,8 @@ for (my $i = 0; $i < $loop_size; $i++) {
 		$arr_cnt++;	
 	}
 
-	if (length($notes) != 0) {
-		$nl_before_notes = "\\par";	
-	} else {
-		$nl_before_notes = "";
-	}
-
-	if ($i + 1 != $loop_size) {
-		$newline = "\\\\";
-	} else {
-		$newline = "";
-	}
+	$nl_before_notes = set_nl_before_notes($type, $notes);
+	$nl_after_notes = set_nl_after_notes($i, $loop_size, $type);
 
 	$day = sprintf("%02d", $day);
 	$month = sprintf("%02d", $month);
@@ -215,17 +263,7 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	}
 }
 
-if (openhandle(save_file) != undef) {
-	if ($type eq "cal_entry_tex") {
-		print save_file "\\end{document}";
-	} else {
-		print save_file "--------------------------------------------------------------------------------\n";
-	}
-	close(save_file);
-} else {
-	if ($type eq "cal_entry_tex") {
-		print "\\end{document}";
-	} else {
-		print "--------------------------------------------------------------------------------\n";
-	}
-}
+write_footer($type, save_file);
+
+close(save_file);
+

@@ -1,0 +1,11 @@
+\documentclass[12pt, a4paper, oneside]{article}\title{Calendar}\author{Konrad Gotfryd}\begin{document}\maketitle\noindent 2016.10.29. Saturday \par Lorem ipsum dolor. \\
+\noindent 2016.10.30. Sunday \par Neque porro quisquam. \\
+\noindent 2016.10.31. Monday   \\
+\noindent 2016.11.01. Tuesday \par Fósćę nęc grąvidą. \\
+\noindent 2016.11.02. Wednesday   \\
+\noindent 2016.11.03. Thursday   \\
+\noindent 2016.11.04. Friday   \\
+\noindent 2016.11.05. Saturday   \\
+\noindent 2016.11.06. Sunday   \\
+\noindent 2016.11.07. Monday
+\end{document}
