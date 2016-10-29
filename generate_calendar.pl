@@ -3,6 +3,7 @@
 use Date::Calendar::Profiles qw( $Profiles );
 use Date::Calendar;
 use Date::Calc qw(:all);
+use Scalar::Util qw(openhandle);
 use Switch;
 
 format cal_entry_tex =
@@ -12,7 +13,7 @@ $year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes, $newline
 
 format cal_entry_txt =
 --------------------------------------------------------------------------------
-@####.@##.@##. @* @*
+@*.@*.@*. @* @*
 $year, ${month}, ${day}, $day_of_w_txt, $notes
 .
 
@@ -50,7 +51,7 @@ sub print_args_info {
 	print "\nAdditional arguments:\n";
 	print "\"-p [path]\" path to file with notes.\n";
 	print "\"-s [path]\" path to save output.\n";
-	print "\"-t [txt/tex]\" output type. txt is the default output.\n\n";
+	print "\"-t [txt/tex]\" output type. txt is the default type.\n\n";
 }
 
 sub parse_input_args {
@@ -129,8 +130,17 @@ sub parse_input_args {
 
 ($loop_size, $file_path, $save_path, $type) = parse_input_args();
 
-if (length ($save_path) != 0) {
-	open(save_file, ">", $save_path);
+open(save_file, ">", $save_path);
+if (openhandle(save_file) == undef) {
+	if (length $save_path != 0) {
+		print "Could not open file $save_path. Writing output";
+		print " to console.\n";
+	}
+	save_file = *STDOUT;
+}
+
+
+if (openhandle(save_file) != undef) {
 	select(save_file);
 } else {
 	select(STDOUT);
@@ -150,7 +160,7 @@ $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 $date_year = $calendar->year($year);
 $index = $calendar->date2index($year, $month, $day);
 
-if ($type eq "cal_entry_tex" && length($save_path)) {
+if ($type eq "cal_entry_tex" && openhandle(save_file) != undef) {
 	print save_file "\\documentclass[12pt, a4paper, oneside]{article}";
 	print save_file "\\title{Calendar}";
 	print save_file "\\author{Konrad Gotfryd}";
@@ -205,7 +215,7 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	}
 }
 
-if (length ($save_path) != 0) {
+if (openhandle(save_file) != undef) {
 	if ($type eq "cal_entry_tex") {
 		print save_file "\\end{document}";
 	} else {
