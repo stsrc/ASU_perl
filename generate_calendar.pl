@@ -6,14 +6,14 @@ use Date::Calc qw(:all);
 use Switch;
 
 format cal_entry_tex =
-\noindent @####.@##.@##. @* @* @* @*
-$year, $month, $day, $day_of_w_txt, $nl_before_notes, $notes, $newline
+\noindent @*.@*.@*. @* @* @* @*
+$year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes, $newline
 .
 
 format cal_entry_txt =
 --------------------------------------------------------------------------------
 @####.@##.@##. @* @*
-$year, $month, $day, $day_of_w_txt, $notes
+$year, ${month}, ${day}, $day_of_w_txt, $notes
 .
 
 sub read_file {
@@ -47,8 +47,10 @@ sub print_args_info {
 	print "\"-d [count]\" for number of days to print.\n";
 	print "\"-w [count]\" for number of weeks to print.\n";
 	print "\"-m [count]\" for number of months to print.\n";
-	print "\nAdditionally:\n \"-p [path]\" to write path to the notes file\n";
-	print "\"-s [path]\" to save file to specific file\"\n\n";
+	print "\nAdditional arguments:\n";
+	print "\"-p [path]\" path to file with notes.\n";
+	print "\"-s [path]\" path to save output.\n";
+	print "\"-t [txt/tex]\" output type. txt is the default output.\n\n";
 }
 
 sub parse_input_args {
@@ -59,6 +61,7 @@ sub parse_input_args {
 	my $cnt = scalar @ARGV;
 	my $i = 0;
 	my $save_path;
+	my $form_type = "cal_entry_txt";
 
 	if ($cnt == 0) {
 		print_args_info();
@@ -98,34 +101,42 @@ sub parse_input_args {
 			}
 
 			case /-p/ {
-				$notes_path = $arg_vail;
+				$notes_path = $arg_val;
 			}
 			
 			case /-s/ {
 				$save_path = $arg_val;
 			}
-
+			
+			case /-t/ {
+				if ($arg_val eq "txt") {
+					$form_type = "cal_entry_txt";
+				} elsif ($arg_val eq "tex") {
+					$form_type = "cal_entry_tex";
+				} else {
+					print_args_info();
+					exit(1);
+				}
+			}
 			else {
 				print_args_info();
-				break;
+				exit(1);
 			}
 		}
 	}
-	if (length ($save_path) == 0) {
-		$save_path = "calendar.tex";
-	}
-	return ($days, $notes_path, $save_path);
+	return ($days, $notes_path, $save_path, $form_type);
 }
 
-select(STDOUT);
-$~ = "cal_entry_tex";
+($loop_size, $file_path, $save_path, $type) = parse_input_args();
 
+if (length ($save_path) != 0) {
+	open(save_file, ">", $save_path);
+	select(save_file);
+} else {
+	select(STDOUT);
+}
 
-
-($loop_size, $file_path, $save_path) = parse_input_args();
-
-open(cal_entry_tex, ">", $save_path);
-
+$~ = $type;
 @file_arr = read_file($file_path);
 
 $arr_cnt = 0;
@@ -139,11 +150,19 @@ $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 $date_year = $calendar->year($year);
 $index = $calendar->date2index($year, $month, $day);
 
-print cal_entry_tex "\\documentclass[12pt, a4paper, oneside]{article}";
-print cal_entry_tex "\\title{Calendar}";
-print cal_entry_tex "\\author{Konrad Gotfryd}";
-print cal_entry_tex "\\begin{document}";
-print cal_entry_tex "\\maketitle";
+if ($type eq "cal_entry_tex" && length($save_path)) {
+	print save_file "\\documentclass[12pt, a4paper, oneside]{article}";
+	print save_file "\\title{Calendar}";
+	print save_file "\\author{Konrad Gotfryd}";
+	print save_file "\\begin{document}";
+	print save_file "\\maketitle";
+} elsif ($type eq "cal_entry_tex") {
+	print "\\documentclass[12pt, a4paper, oneside]{article}";
+	print "\\title{Calendar}";
+	print "\\author{Konrad Gotfryd}";
+	print "\\begin{document}";
+	print "\\maketitle";
+}
 
 for (my $i = 0; $i < $loop_size; $i++) {
 	$date = $date_year->index2date($index);
@@ -173,7 +192,11 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	} else {
 		$newline = "";
 	}
-	write(cal_entry_tex);
+
+	$day = sprintf("%02d", $day);
+	$month = sprintf("%02d", $month);
+
+	write;
 
 	$index++;
 	if ($month == 12 && $day == 31) {
@@ -182,5 +205,17 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	}
 }
 
-print cal_entry_tex "\\end{document}";
-close(cal_entry_tex);
+if (length ($save_path) != 0) {
+	if ($type eq "cal_entry_tex") {
+		print save_file "\\end{document}";
+	} else {
+		print save_file "--------------------------------------------------------------------------------\n";
+	}
+	close(save_file);
+} else {
+	if ($type eq "cal_entry_tex") {
+		print "\\end{document}";
+	} else {
+		print "--------------------------------------------------------------------------------\n";
+	}
+}
