@@ -41,8 +41,8 @@ sub read_file {
 }
 
 sub parse_data {
-	my @parsed = [];
 	my $line = $_[0];
+	my @parsed = [];
 
 	my($parsed_date, $parsed_note) = split(/ /, $line, 2);
 	@parsed = split(/\./, $parsed_date);
@@ -57,8 +57,9 @@ sub print_args_info {
 	print "\"-m [count]\" count of months to print.\n";
 	print "\nAdditional arguments:\n";
 	print "\"-p [path]\" path to file with notes. If parameter not passed";
-	print " path defaults to notes.txt.\n";
-	print "\"-s [path]\" path to save output.\n";
+	print " path defaults to ./notes.txt.\n";
+	print "\"-s [path]\" path to save output. If paremeter not passed";
+	print " application prints to the console.\n";
 	print "\"-t [txt/tex]\" output type. txt is the default type.\n";
 	print "\"-a [yyyy.mm.dd]\" sets date from which calendar should start.";
 	print " If argument not passed, calendar starts from today.\n";
@@ -130,9 +131,9 @@ sub parse_input_args {
 			case /-m/ {
 				if ($am_flag == 0) {
 					($year, $month, $day) = Today();	
-					$days = calculate_days($year, $month, $day, $arg_val);
+					$am_flag = $arg_val;
 				}
-				$am_flag = $arg_val;
+					$days = calculate_days($year, $month, $day, $arg_val);
 			}
 
 			case /-pl/ {
@@ -167,8 +168,9 @@ sub parse_input_args {
 				($year, $month, $day) = parse_data($arg_val);
 				if ($am_flag != 0) { #it means that -m parameter was passed before -a.
 					$days = calculate_days($year, $month, $day, $am_flag);
+				} else {
+					$am_flag = 1;	
 				}
-				$am_flag = 1;	
 			}
 			
 			else {
@@ -234,31 +236,15 @@ sub set_nl_before_notes {
 	my $notes = $_[1];
 
 	if (length $notes ne 0) {
-		if ($type eq "cal_entry_tex") {
-			return "\\par ".$notes;
-		} else {
+		if ($type eq "cal_entry_txt") {
 			return "\n     ".$notes;
+		} else {
+			return $notes;
 		}
 	} else {
-		return "".$notes;
+		return $notes;
 	}
-	return "".$notes;	
-}
-
-sub set_nl_after_notes {
-	my $i = $_[0];
-	my $loop_size = $_[1];
-	my $type = $_[2];
-	
-	if ($type eq "cal_entry_txt") {
-		return "";
-	}
-
-	if ($i + 1 != $loop_size) {
-		return "\\\\";
-	} else {
-		return "";
-	}
+	return $notes;	
 }
 
 sub check_note {
