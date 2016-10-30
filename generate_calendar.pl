@@ -190,6 +190,7 @@ sub write_header {
 		print $fh "\\documentclass[12pt, oneside]{article}\n";
 		print $fh "\\usepackage[T1]{fontenc}\n";
 		print $fh "\\usepackage[utf8]{inputenc}\n";
+		print $fh "\\usepackage{longtable}\n";
 		if ($translate == 0) {
 			print $fh "\\usepackage[english]{babel}\n";
 			print $fh "\\title{Calendar}\n";
@@ -200,9 +201,7 @@ sub write_header {
 		print $fh "\\author{Konrad Gotfryd}\n";
 		print $fh "\\begin{document}\n";
 		print $fh "\\maketitle\n";
-		print $fh "\\begin{table}\n";
-		print $fh "\\centering\n";
-		print $fh "\\begin{tabular}{|c|c|c|}\n";
+		print $fh "\\begin{longtable}{|c|c|c|}\n";
 		print $fh "\\hline\n";
 		if ($translate == 0) {
 			print $fh "Date & Day & Note\\\\ \\hline\n";
@@ -223,8 +222,7 @@ sub write_footer {
 	my $fh = $_[1];
 
 	if ($type eq "cal_entry_tex") {
-		print $fh "\\end{tabular}\n";
-		print $fh "\\end{table}\n";
+		print $fh "\\end{longtable}\n";
 		print $fh "\\end{document}\n";
 	} else {
 		print $fh "$dash_line\n";
