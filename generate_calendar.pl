@@ -78,7 +78,7 @@ sub parse_input_args {
 	my $notes_path = "notes.txt";
 	my $cnt = scalar @ARGV;
 	my $i = 0;
-	my $save_path;
+	my $save_path = "";
 	my $form_type = "cal_entry_txt";
 	my $translate = 0;
 
@@ -99,10 +99,10 @@ sub parse_input_args {
 		$i += 2;
 		switch($type) {
 			case /-d/ {
-				$days = $arg_val; #TODO Value test
+				$days = $arg_val; 
 			}
 			case /-w/ {
-				$days = $arg_val * 7; #TODO Value test
+				$days = $arg_val * 7; 
 			}
 			case /-m/ {
 				my $tmp = 0;
@@ -212,7 +212,7 @@ sub set_nl_before_notes {
 		if ($type eq "cal_entry_tex") {
 			return "\\par";
 		} else {
-			return "\n     ";
+			return "\n ";
 		}
 	} else {
 		return "";
@@ -234,6 +234,18 @@ sub set_nl_after_notes {
 	} else {
 		return "";
 	}
+}
+
+sub check_note {
+	my $note = $_[0];
+		
+	if ($_[1] eq "cal_entry_tex") {
+		return $note;
+	}
+
+	$note =~ s/(.{2,80})/$1\n/gs;
+
+	return $note;
 }
 
 sub ignore_notes_before_date {
@@ -306,7 +318,7 @@ for (my $i = 0; $i < $loop_size; $i++) {
 
 	$nl_before_notes = set_nl_before_notes($type, $notes);
 	$nl_after_notes = set_nl_after_notes($i, $loop_size, $type);
-
+	$notes = check_note($notes, $type);
 	$day = sprintf("%02d", $day);
 	$month = sprintf("%02d", $month);
 
