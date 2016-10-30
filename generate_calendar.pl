@@ -9,8 +9,8 @@ use Switch;
 use warnings;
 
 format cal_entry_tex =
-\noindent @*.@*.@*. @* @* @*
-$year, ${month}, ${day}, $day_of_w_txt, $notes, $nl_after_notes
+@*.@*.@*. & @* & @* \\ \hline 
+$year, ${month}, ${day}, $day_of_w_txt, $notes
 .
 
 format cal_entry_txt =
@@ -75,7 +75,7 @@ sub calculate_days {
 	my $year = $_[0];
 	my $month = $_[1];
 	my $day = $_[2];
-
+	my $arg_val = $_[3];
 	if ($year == 0 && $month == 0 && $day == 0) {
 
 	}
@@ -130,9 +130,9 @@ sub parse_input_args {
 			case /-m/ {
 				if ($am_flag == 0) {
 					($year, $month, $day) = Today();	
-					$days = calculate_days($year, $month, $day);
+					$days = calculate_days($year, $month, $day, $arg_val);
 				}
-				$am_flag = 1;
+				$am_flag = $arg_val;
 			}
 
 			case /-pl/ {
@@ -166,9 +166,9 @@ sub parse_input_args {
 			case /-a/ {
 				($year, $month, $day) = parse_data($arg_val);
 				if ($am_flag != 0) { #it means that -m parameter was passed before -a.
-					$days = calculate_days($year, $month, $day);
-					$am_flag = 1;	
+					$days = calculate_days($year, $month, $day, $am_flag);
 				}
+				$am_flag = 1;	
 			}
 			
 			else {
@@ -187,19 +187,28 @@ sub write_header {
 	my $translate = $_[2];
 	
 	if ($type eq "cal_entry_tex") {
-		print $fh "\\documentclass[12pt, a4paper, oneside]{article}";
-		print $fh "\\usepackage[T1]{fontenc}";
-		print $fh "\\usepackage[utf8]{inputenc}";
+		print $fh "\\documentclass[12pt, oneside]{article}\n";
+		print $fh "\\usepackage[T1]{fontenc}\n";
+		print $fh "\\usepackage[utf8]{inputenc}\n";
 		if ($translate == 0) {
-			print $fh "\\usepackage[english]{babel}";
-			print $fh "\\title{Calendar}";
+			print $fh "\\usepackage[english]{babel}\n";
+			print $fh "\\title{Calendar}\n";
 		} else {
-			print $fh "\\usepackage[polish]{babel}";
-			print $fh "\\title{Kalendarz}";
+			print $fh "\\usepackage[polish]{babel}\n";
+			print $fh "\\title{Kalendarz}\n";
 		}
-		print $fh "\\author{Konrad Gotfryd}";
-		print $fh "\\begin{document}";
-		print $fh "\\maketitle"; 
+		print $fh "\\author{Konrad Gotfryd}\n";
+		print $fh "\\begin{document}\n";
+		print $fh "\\maketitle\n";
+		print $fh "\\begin{table}\n";
+		print $fh "\\centering\n";
+		print $fh "\\begin{tabular}{|c|c|c|}\n";
+		print $fh "\\hline\n";
+		if ($translate == 0) {
+			print $fh "Date & Day & Note\\\\ \\hline\n";
+		} else {
+			print $fh "Data & Dzień & Notatka\\\\ \\hline\n";
+		}	
 	} else {
 		if ($translate == 0) {
 			print $fh "\nCalendar\nAuthor: Konrad Gotfryd\n\n";
@@ -214,9 +223,11 @@ sub write_footer {
 	my $fh = $_[1];
 
 	if ($type eq "cal_entry_tex") {
-		print save_file "\\end{document}";
+		print $fh "\\end{tabular}\n";
+		print $fh "\\end{table}\n";
+		print $fh "\\end{document}\n";
 	} else {
-		print save_file "$dash_line\n";
+		print $fh "$dash_line\n";
 	}
 }
 
@@ -224,9 +235,9 @@ sub set_nl_before_notes {
 	my $type = $_[0];
 	my $notes = $_[1];
 
-	if (length($notes) != 0) {
+	if (length $notes ne 0) {
 		if ($type eq "cal_entry_tex") {
-			return "\\par".$notes;
+			return "\\par ".$notes;
 		} else {
 			return "\n     ".$notes;
 		}
@@ -333,7 +344,6 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	}
 
 	$notes = set_nl_before_notes($type, $notes);
-	$nl_after_notes = set_nl_after_notes($i, $loop_size, $type);
 	$notes = check_note($notes, $type);
 	$day = sprintf("%02d", $day);
 	$month = sprintf("%02d", $month);
