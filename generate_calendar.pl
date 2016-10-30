@@ -1,26 +1,162 @@
 #!/usr/bin/perl
+use warnings;
 
 use Date::Calendar::Profiles qw( $Profiles );
 use Date::Calendar;
 use Date::Calc qw(:all);
 use Scalar::Util qw(openhandle);
 use Switch;
+use IO::File;
 
-use warnings;
+package Tex;
 
 format cal_entry_tex =
 @*.@*.@*. & @* & @* \\ \hline 
-$year, ${month}, ${day}, $day_of_w_txt, $notes
+$year, $month, $day, $day_of_w_txt, $notes
 .
+
+sub new {
+	my $class = shift;
+	my $self = {
+			_fh => shift,
+			_translate => shift, 
+	};
+	bless $self, $class;
+	return $self;
+}
+
+sub set_outputs {
+	$fh = $_[1];
+	select($fh);
+	$~ = cal_entry_tex;
+}
+
+sub format_ref {
+	$year = $_[1];
+	$month = $_[2];
+	$day = $_[3];
+	$day_of_w_txt = $_[4];
+	$notes = $_[5];
+	write;
+}
+
+sub write_header {
+	my $self = $_[0];
+	my $fh = $self->{_fh};
+	
+	print $fh "\\documentclass[12pt, oneside]{article}\n";
+	print $fh "\\usepackage[T1]{fontenc}\n";
+	print $fh "\\usepackage[utf8]{inputenc}\n";
+	print $fh "\\usepackage{longtable}\n";
+	if ($self->{_translate} == 0) {
+		print $fh "\\usepackage[english]{babel}\n";
+		print $fh "\\title{Calendar}\n";
+	} else {
+		print $fh "\\usepackage[polish]{babel}";
+		print $fh "\\title{Kalendarz}\n";
+	}
+	print $fh "\\author{Konrad Gotfryd}\n";
+	print $fh "\\begin{document}\n";
+	print $fh "\\maketitle\n";
+	print $fh "\\begin{longtable}{|c|c|p{6cm}|}\n";
+	print $fh "\\hline\n";
+	if ($self->{_translate} == 0) {
+		print $fh "Date & Day & Note\\\\ \\hline\n";
+	} else {
+		print $fh "Data & Dzień & Notatka\\\\ \\hline\n";
+	}	
+}
+
+sub write_footer {
+	my $fh = $_[1];
+
+	print $fh "\\end{longtable}\n";
+	print $fh "\\end{document}\n";
+
+}
+
+sub set_nl_before_notes {
+	my $notes = $_[1];
+	return $notes;	
+}
+
+sub check_note {
+	my $note = $_[1];
+	return $note;
+}
+
+package Txt;
+$dash_line = "--------------------------------------------------------------------------------";
 
 format cal_entry_txt =
 @*
 $dash_line
 @*.@*.@*. @* @*
-$year, ${month}, ${day}, $day_of_w_txt, $notes
+$year, $month, $day, $day_of_w_txt, $notes
 .
 
-$dash_line = "--------------------------------------------------------------------------------";
+sub set_outputs {
+	$fh = $_[1];
+	select($fh);
+	$~ = cal_entry_txt;
+}
+
+sub format_ref {
+	$year = $_[1];
+	$month = $_[2];
+	$day = $_[3];
+	$day_of_w_txt = $_[4];
+	$notes = $_[5];
+	write;
+}
+
+sub new {
+	my $class = shift;
+	my $self = {
+			_fh => shift,
+			_translate => shift, 
+	};
+	bless $self, $class;
+	return $self;
+}
+
+sub write_header {
+	my $self = $_[0];
+	my $fh = $self->{_fh};
+	if ($self->{_translate} == 0) {
+		print $fh "\nCalendar\nAuthor: Konrad Gotfryd\n\n";
+	} else {
+		print $fh "\nKalendarz\nAutor: Konrad Gotfryd\n\n";
+	}
+}
+
+sub write_footer {
+	my $fh = $_[1];
+	print $fh "$dash_line\n";
+}
+
+sub set_nl_before_notes {
+	my $notes = $_[1];
+
+	if (length $notes ne 0) {
+		return "\n     ".$notes;
+	} else {
+		return $notes;
+	}
+
+	return $notes;	
+}
+
+sub check_note {
+	my $note = $_[1];
+	
+	$note =~ s/(.{2,80})/$1\n/gs;
+
+	return $note;
+}
+
+package main;
+
 %translate_day = ('Monday', 'Poniedziałek', 'Tuesday', 'Wtorek', 'Wednesday', 'Środa', 
 		  'Thursday', 'Czwartek', 'Friday', 'Piątek', 'Saturday', 'Sobota',
 		  'Sunday', 'Niedziela');
@@ -50,6 +186,9 @@ sub parse_data {
 	return ($parsed[0], $parsed[1], $parsed[2], $parsed_note);
 }
 
+
+
+
 sub print_args_info {
 	print "\nUse one of specific argument:\n";
 	print "\"-d [count]\" count of days to print.\n";
@@ -77,9 +216,6 @@ sub calculate_days {
 	my $month = $_[1];
 	my $day = $_[2];
 	my $arg_val = $_[3];
-	if ($year == 0 && $month == 0 && $day == 0) {
-
-	}
 
 	$tmp += Days_in_Month($year, $month) - $day + 1;
 	$month++;
@@ -133,7 +269,7 @@ sub parse_input_args {
 					($year, $month, $day) = Today();	
 					$am_flag = $arg_val;
 				}
-					$days = calculate_days($year, $month, $day, $arg_val);
+				$days = calculate_days($year, $month, $day, $arg_val);
 			}
 
 			case /-pl/ {
@@ -178,85 +314,9 @@ sub parse_input_args {
 				exit(1);
 			}
 		}
-	}
+	}	
 	return ($days, $notes_path, $save_path, $form_type, $translate,
 		$year, $month, $day);
-}
-
-sub write_header {
-	my $type = $_[0];
-	my $fh = $_[1];
-	my $translate = $_[2];
-	
-	if ($type eq "cal_entry_tex") {
-		print $fh "\\documentclass[12pt, oneside]{article}\n";
-		print $fh "\\usepackage[T1]{fontenc}\n";
-		print $fh "\\usepackage[utf8]{inputenc}\n";
-		print $fh "\\usepackage{longtable}\n";
-		if ($translate == 0) {
-			print $fh "\\usepackage[english]{babel}\n";
-			print $fh "\\title{Calendar}\n";
-		} else {
-			print $fh "\\usepackage[polish]{babel}\n";
-			print $fh "\\title{Kalendarz}\n";
-		}
-		print $fh "\\author{Konrad Gotfryd}\n";
-		print $fh "\\begin{document}\n";
-		print $fh "\\maketitle\n";
-		print $fh "\\begin{longtable}{|c|c|c|}\n";
-		print $fh "\\hline\n";
-		if ($translate == 0) {
-			print $fh "Date & Day & Note\\\\ \\hline\n";
-		} else {
-			print $fh "Data & Dzień & Notatka\\\\ \\hline\n";
-		}	
-	} else {
-		if ($translate == 0) {
-			print $fh "\nCalendar\nAuthor: Konrad Gotfryd\n\n";
-		} else {
-			print $fh "\nKalendarz\nAutor: Konrad Gotfryd\n\n";
-		}
-	}
-}
-
-sub write_footer {
-	my $type = $_[0];
-	my $fh = $_[1];
-
-	if ($type eq "cal_entry_tex") {
-		print $fh "\\end{longtable}\n";
-		print $fh "\\end{document}\n";
-	} else {
-		print $fh "$dash_line\n";
-	}
-}
-
-sub set_nl_before_notes {
-	my $type = $_[0];
-	my $notes = $_[1];
-
-	if (length $notes ne 0) {
-		if ($type eq "cal_entry_txt") {
-			return "\n     ".$notes;
-		} else {
-			return $notes;
-		}
-	} else {
-		return $notes;
-	}
-	return $notes;	
-}
-
-sub check_note {
-	my $note = $_[0];
-		
-	if ($_[1] eq "cal_entry_tex") {
-		return $note;
-	}
-
-	$note =~ s/(.{2,80})/$1\n/gs;
-
-	return $note;
 }
 
 sub ignore_notes_before_date {
@@ -274,35 +334,46 @@ sub ignore_notes_before_date {
 	return -1;
 }
 
+sub constructor {
+	my $fh = $_[0];
+	my $type = $_[1];
+	my $translate = $_[2];
+	my $obj;
+	if ($type eq "cal_entry_tex") {
+		$obj = new Tex($fh, $translate); 
+		return $obj;
+	} else {
+		$obj = new Txt($fh, $translate);
+		return $obj;
+	}
+}
+
 #There is no PL-MA in profiles.
 $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 
 ($loop_size, $file_path, $save_path, $type, $translate, 
 	$year, $month, $day) = parse_input_args();
 
-if ($year == 0 && $month == 0 && $day == 0) {
-	($year, $month, $day) = Today();
-}
-
-open(save_file, ">", $save_path);
+my $save_file = IO::File->new;
 
 if (length $save_path == 0) {
 	if (length $save_path != 0) {
 		print "Could not open file $save_path. Writing output";
 		print " to the console.\n";
 	}
-	*save_file = STDOUT;
+	*$save_file = STDOUT;
+} else {
+	open $save_file, ">$save_path" or die "Cannot create $save_path!";
 }
 
-select(save_file);
-
-$~ = $type;
 @file_arr = read_file($file_path);
 $arr_cnt = 0;
 
 ignore_notes_before_date();
 
-write_header($type, save_file, $translate);
+$text_object = constructor($save_file, $type, $translate);
+$text_object->set_outputs($save_file);
+$text_object->write_header();
 
 $date_year = $calendar->year($year);
 $index = $calendar->date2index($year, $month, $day);
@@ -327,12 +398,12 @@ for (my $i = 0; $i < $loop_size; $i++) {
 		$arr_cnt++;	
 	}
 
-	$notes = set_nl_before_notes($type, $notes);
-	$notes = check_note($notes, $type);
+	$notes = $text_object->set_nl_before_notes($notes);
+	$notes = $text_object->check_note($notes);
 	$day = sprintf("%02d", $day);
 	$month = sprintf("%02d", $month);
 
-	write;
+	$text_object->format_ref($year, $month, $day, $day_of_w_txt, $notes);
 
 	$index++;
 	if ($month == 12 && $day == 31) {
@@ -341,7 +412,7 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	}
 }
 
-write_footer($type, save_file);
+$text_object->write_footer($save_file);
 
-close(save_file);
+close($save_file);
 
