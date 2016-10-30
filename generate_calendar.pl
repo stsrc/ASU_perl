@@ -6,6 +6,8 @@ use Date::Calc qw(:all);
 use Scalar::Util qw(openhandle);
 use Switch;
 
+#use warnings;
+
 format cal_entry_tex =
 \noindent @*.@*.@*. @* @* @* @*
 $year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes, $nl_after_notes
@@ -19,6 +21,9 @@ $year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes
 .
 
 $dash_line = "--------------------------------------------------------------------------------";
+%translate_day = ('Monday', 'Poniedziałek', 'Tuesday', 'Wtorek', 'Wednesday', 'Środa', 
+		  'Thursday', 'Czwartek', 'Friday', 'Piątek', 'Saturday', 'Sobota',
+		  'Sunday', 'Sobota');
 
 sub read_file {
 	my @file_arr;
@@ -55,6 +60,7 @@ sub print_args_info {
 	print " path defaults to notes.txt.\n";
 	print "\"-s [path]\" path to save output.\n";
 	print "\"-t [txt/tex]\" output type. txt is the default type.\n\n";
+	print "\"-pl: polish language of calendar.\n"; #TODO
 }
 
 sub print_warn_args_info {
@@ -72,9 +78,10 @@ sub parse_input_args {
 	my $i = 0;
 	my $save_path;
 	my $form_type = "cal_entry_txt";
-
+	my $translate = 0;
+	
 	if ($cnt == 0) {
-		print_args_info();
+		print_warn_args_info();
 		exit(1);
 	}
 
@@ -110,6 +117,11 @@ sub parse_input_args {
 				$days = $tmp;
 			}
 
+			case /-pl/ {
+				$translate = 1;
+				$i--;
+			}
+
 			case /-p/ {
 				$notes_path = $arg_val;
 			}
@@ -132,28 +144,38 @@ sub parse_input_args {
 				print_args_info();
 				exit(1);
 			}
-
+	
 			else {
 				print_warn_args_info();
 				exit(1);
 			}
 		}
 	}
-	return ($days, $notes_path, $save_path, $form_type);
+	return ($days, $notes_path, $save_path, $form_type, $translate);
 }
 
 sub write_header {
 	my $type = $_[0];
 	my $fh = $_[1];
-
+	my $translate = $_[2];
+	
 	if ($type eq "cal_entry_tex") {
 		print $fh "\\documentclass[12pt, a4paper, oneside]{article}";
-		print $fh "\\title{Calendar}";
+		if ($translate == 0) {
+			print $fh "\\title{Calendar}";
+		} else {
+			print $fh "\\usepackage[polish]{babel}";
+			print $fh "\\title{Kalendarz}";
+		}
 		print $fh "\\author{Konrad Gotfryd}";
 		print $fh "\\begin{document}";
 		print $fh "\\maketitle"; 
 	} else {
-		print $fh "\nCalendar\nAuthor: Konrad Gotfryd\n\n";
+		if ($translate == 0) {
+			print $fh "\nCalendar\nAuthor: Konrad Gotfryd\n\n";
+		} else {
+			print $fh "\nKalendarz\nAutor: Konrad Gotfryd\n\n";
+		}
 	}
 }
 
@@ -171,18 +193,17 @@ sub write_footer {
 sub set_nl_before_notes {
 	my $type = $_[0];
 	my $notes = $_[1];
-	my $nl_before_notes;
 
 	if (length($notes) != 0) {
 		if ($type eq "cal_entry_tex") {
-			$nl_before_notes = "\\par";
+			return "\\par";
 		} else {
-			$nl_before_notes = "\n     ";
+			return "\n     ";
 		}
 	} else {
-		$nl_before_notes = "";
+		return "";
 	}
-	return $nl_before_notes;	
+	return "";	
 }
 
 sub set_nl_after_notes {
@@ -201,10 +222,29 @@ sub set_nl_after_notes {
 	}
 }
 
-($loop_size, $file_path, $save_path, $type) = parse_input_args();
+sub ignore_notes_before_date {
+	my $cnt = $loop_size;
+	while ($cnt) {
+		($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);
+		$arr_cnt++;
+
+		if ($year > $year_f || $month > $month_f || $day > $day_f) {
+			$cnt--;	
+		} else {
+			return $cnt;
+		}
+	}
+	return -1;
+}
+
+#There is no PL-MA in profiles.
+$calendar = Date::Calendar->new($Profiles->{'US-FL'});
+
+($loop_size, $file_path, $save_path, $type, $translate) = parse_input_args();
 
 open(save_file, ">", $save_path);
-unless (save_file) {
+
+if (length $save_path == 0) {
 	if (length $save_path != 0) {
 		print "Could not open file $save_path. Writing output";
 		print " to the console.\n";
@@ -216,21 +256,15 @@ select(save_file);
 
 $~ = $type;
 @file_arr = read_file($file_path);
-
-write_header($type, save_file);
-
 $arr_cnt = 0;
-($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);
-$arr_cnt++;
-
-#There is no PL-MA in profiles.
-$calendar = Date::Calendar->new($Profiles->{'US-FL'});
 
 ($year, $month, $day) = Today();
+$ret = ignore_notes_before_date();
+
+write_header($type, save_file, $translate);
 
 $date_year = $calendar->year($year);
 $index = $calendar->date2index($year, $month, $day);
-
 
 for (my $i = 0; $i < $loop_size; $i++) {
 	$date = $date_year->index2date($index);
@@ -241,6 +275,9 @@ for (my $i = 0; $i < $loop_size; $i++) {
 
 	$day_of_w = Day_of_Week($year, $month, $day);
 	$day_of_w_txt = Day_of_Week_to_Text($day_of_w);
+	if ($translate == 1) {
+		$day_of_w_txt = $translate_day{$day_of_w_txt};
+	}
 	$notes = "";
 	
 	if ($day == $day_f && $month == $month_f && $year == $year_f) {
