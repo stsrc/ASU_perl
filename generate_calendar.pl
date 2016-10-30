@@ -47,11 +47,12 @@ sub parse_data {
 
 sub print_args_info {
 	print "\nUse one of specific argument:\n";
-	print "\"-d [count]\" for number of days to print.\n";
-	print "\"-w [count]\" for number of weeks to print.\n";
-	print "\"-m [count]\" for number of months to print.\n";
+	print "\"-d [count]\" count of days to print.\n";
+	print "\"-w [count]\" count of weeks to print.\n";
+	print "\"-m [count]\" count of months to print.\n";
 	print "\nAdditional arguments:\n";
-	print "\"-p [path]\" path to file with notes.\n";
+	print "\"-p [path]\" path to file with notes. If parameter not passed";
+	print " path defaults to notes.txt.\n";
 	print "\"-s [path]\" path to save output.\n";
 	print "\"-t [txt/tex]\" output type. txt is the default type.\n\n";
 }
