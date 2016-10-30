@@ -6,7 +6,7 @@ use Date::Calc qw(:all);
 use Scalar::Util qw(openhandle);
 use Switch;
 
-#use warnings;
+use warnings;
 
 format cal_entry_tex =
 \noindent @*.@*.@*. @* @* @* @*
@@ -23,7 +23,7 @@ $year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes
 $dash_line = "--------------------------------------------------------------------------------";
 %translate_day = ('Monday', 'Poniedziałek', 'Tuesday', 'Wtorek', 'Wednesday', 'Środa', 
 		  'Thursday', 'Czwartek', 'Friday', 'Piątek', 'Saturday', 'Sobota',
-		  'Sunday', 'Sobota');
+		  'Sunday', 'Niedziela');
 
 sub read_file {
 	my @file_arr;
@@ -47,7 +47,7 @@ sub parse_data {
 	my($parsed_date, $parsed_note) = split(/ /, $line, 2);
 	@parsed = split(/\./, $parsed_date);
 
-	return (@parsed[0], @parsed[1], @parsed[2], $parsed_note);
+	return ($parsed[0], $parsed[1], $parsed[2], $parsed_note);
 }
 
 sub print_args_info {
@@ -59,8 +59,10 @@ sub print_args_info {
 	print "\"-p [path]\" path to file with notes. If parameter not passed";
 	print " path defaults to notes.txt.\n";
 	print "\"-s [path]\" path to save output.\n";
-	print "\"-t [txt/tex]\" output type. txt is the default type.\n\n";
-	print "\"-pl: polish language of calendar.\n"; #TODO
+	print "\"-t [txt/tex]\" output type. txt is the default type.\n";
+	print "\"-a [dd.mm.yyy]\" sets date from which calendar should start.";
+	print " If argument not passed, calendar starts from today.\n";
+	print "\"-pl: calendar in polish language.\n\n";
 }
 
 sub print_warn_args_info {
@@ -79,6 +81,10 @@ sub parse_input_args {
 	my $save_path;
 	my $form_type = "cal_entry_txt";
 	my $translate = 0;
+
+	my $year = 0;
+	my $month = 0;
+	my $day = 0;
 	
 	if ($cnt == 0) {
 		print_warn_args_info();
@@ -87,8 +93,8 @@ sub parse_input_args {
 
 	while ($i != $cnt) {
 
-		$type = @ARGV[$i];
-		$arg_val = @ARGV[$i + 1];
+		$type = $ARGV[$i];
+		$arg_val = $ARGV[$i + 1];
 
 		$i += 2;
 		switch($type) {
@@ -144,14 +150,19 @@ sub parse_input_args {
 				print_args_info();
 				exit(1);
 			}
-	
+
+			case /-a/ {
+				($year, $month, $day) = parse_data($arg_val);	
+			}
+			
 			else {
 				print_warn_args_info();
 				exit(1);
 			}
 		}
 	}
-	return ($days, $notes_path, $save_path, $form_type, $translate);
+	return ($days, $notes_path, $save_path, $form_type, $translate,
+		$year, $month, $day);
 }
 
 sub write_header {
@@ -161,7 +172,10 @@ sub write_header {
 	
 	if ($type eq "cal_entry_tex") {
 		print $fh "\\documentclass[12pt, a4paper, oneside]{article}";
+		print $fh "\\usepackage[T1]{fontenc}";
+		print $fh "\\usepackage[utf8]{inputenc}";
 		if ($translate == 0) {
+			print $fh "\\usepackage[english]{babel}";
 			print $fh "\\title{Calendar}";
 		} else {
 			print $fh "\\usepackage[polish]{babel}";
@@ -225,7 +239,7 @@ sub set_nl_after_notes {
 sub ignore_notes_before_date {
 	my $cnt = $loop_size;
 	while ($cnt) {
-		($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);
+		($year_f, $month_f, $day_f, $notes_f) = parse_data($file_arr[$arr_cnt]);
 		$arr_cnt++;
 
 		if ($year > $year_f || $month > $month_f || $day > $day_f) {
@@ -240,7 +254,12 @@ sub ignore_notes_before_date {
 #There is no PL-MA in profiles.
 $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 
-($loop_size, $file_path, $save_path, $type, $translate) = parse_input_args();
+($loop_size, $file_path, $save_path, $type, $translate, 
+	$year, $month, $day) = parse_input_args();
+
+if ($year == 0 && $month == 0 && $day == 0) {
+	($year, $month, $day) = Today();
+}
 
 open(save_file, ">", $save_path);
 
@@ -258,8 +277,7 @@ $~ = $type;
 @file_arr = read_file($file_path);
 $arr_cnt = 0;
 
-($year, $month, $day) = Today();
-$ret = ignore_notes_before_date();
+ignore_notes_before_date();
 
 write_header($type, save_file, $translate);
 
@@ -282,7 +300,7 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	
 	if ($day == $day_f && $month == $month_f && $year == $year_f) {
 		$notes = $notes_f;
-		($year_f, $month_f, $day_f, $notes_f) = parse_data(@file_arr[$arr_cnt]);	
+		($year_f, $month_f, $day_f, $notes_f) = parse_data($file_arr[$arr_cnt]);	
 		$arr_cnt++;	
 	}
 
