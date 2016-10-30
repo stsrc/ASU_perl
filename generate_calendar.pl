@@ -9,15 +9,15 @@ use Switch;
 use warnings;
 
 format cal_entry_tex =
-\noindent @*.@*.@*. @* @* @* @*
-$year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes, $nl_after_notes
+\noindent @*.@*.@*. @* @* @*
+$year, ${month}, ${day}, $day_of_w_txt, $notes, $nl_after_notes
 .
 
 format cal_entry_txt =
 @*
 $dash_line
-@*.@*.@*. @* @* @*
-$year, ${month}, ${day}, $day_of_w_txt, $nl_before_notes, $notes
+@*.@*.@*. @* @*
+$year, ${month}, ${day}, $day_of_w_txt, $notes
 .
 
 $dash_line = "--------------------------------------------------------------------------------";
@@ -41,7 +41,7 @@ sub read_file {
 }
 
 sub parse_data {
-	my @parsed;
+	my @parsed = [];
 	my $line = $_[0];
 
 	my($parsed_date, $parsed_note) = split(/ /, $line, 2);
@@ -60,7 +60,7 @@ sub print_args_info {
 	print " path defaults to notes.txt.\n";
 	print "\"-s [path]\" path to save output.\n";
 	print "\"-t [txt/tex]\" output type. txt is the default type.\n";
-	print "\"-a [dd.mm.yyy]\" sets date from which calendar should start.";
+	print "\"-a [yyyy.mm.dd]\" sets date from which calendar should start.";
 	print " If argument not passed, calendar starts from today.\n";
 	print "\"-pl: calendar in polish language.\n\n";
 }
@@ -70,6 +70,28 @@ sub print_warn_args_info {
 	print_args_info();
 }
 
+sub calculate_days {
+	my $tmp = 0;
+	my $year = $_[0];
+	my $month = $_[1];
+	my $day = $_[2];
+
+	if ($year == 0 && $month == 0 && $day == 0) {
+
+	}
+
+	$tmp += Days_in_Month($year, $month) - $day + 1;
+	$month++;
+	for (my $j = 0; $j < $arg_val - 1; $j++) {
+		if ($month == 13) {
+			$month = 1;
+			$year++;
+		}	
+		$tmp += Days_in_Month($year, $month);
+		$month++;
+	}
+	return $tmp;
+}
 
 sub parse_input_args {
 	my $type = 0;
@@ -85,6 +107,7 @@ sub parse_input_args {
 	my $year = 0;
 	my $month = 0;
 	my $day = 0;
+	my $am_flag = 0;
 	
 	if ($cnt == 0) {
 		print_warn_args_info();
@@ -105,22 +128,11 @@ sub parse_input_args {
 				$days = $arg_val * 7; 
 			}
 			case /-m/ {
-				my $tmp = 0;
-				my $year = 0;
-				my $month = 0;
-				my $day = 0;
-				($year, $month, $day) = Today();
-				$tmp += Days_in_Month($year, $month) - $day + 1;
-				$month++;
-				for (my $j = 0; $j < $arg_val - 1; $j++) {
-					if ($month == 13) {
-						$month = 1;
-						$year++;
-					}	
-					$tmp += Days_in_Month($year, $month);
-					$month++;
+				if ($am_flag == 0) {
+					($year, $month, $day) = Today();	
+					$days = calculate_days($year, $month, $day);
 				}
-				$days = $tmp;
+				$am_flag = 1;
 			}
 
 			case /-pl/ {
@@ -152,7 +164,11 @@ sub parse_input_args {
 			}
 
 			case /-a/ {
-				($year, $month, $day) = parse_data($arg_val);	
+				($year, $month, $day) = parse_data($arg_val);
+				if ($am_flag != 0) { #it means that -m parameter was passed before -a.
+					$days = calculate_days($year, $month, $day);
+					$am_flag = 1;	
+				}
 			}
 			
 			else {
@@ -210,14 +226,14 @@ sub set_nl_before_notes {
 
 	if (length($notes) != 0) {
 		if ($type eq "cal_entry_tex") {
-			return "\\par";
+			return "\\par".$notes;
 		} else {
-			return "\n ";
+			return "\n     ".$notes;
 		}
 	} else {
-		return "";
+		return "".$notes;
 	}
-	return "";	
+	return "".$notes;	
 }
 
 sub set_nl_after_notes {
@@ -316,7 +332,7 @@ for (my $i = 0; $i < $loop_size; $i++) {
 		$arr_cnt++;	
 	}
 
-	$nl_before_notes = set_nl_before_notes($type, $notes);
+	$notes = set_nl_before_notes($type, $notes);
 	$nl_after_notes = set_nl_after_notes($i, $loop_size, $type);
 	$notes = check_note($notes, $type);
 	$day = sprintf("%02d", $day);
