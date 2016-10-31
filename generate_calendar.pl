@@ -186,9 +186,6 @@ sub parse_data {
 	return ($parsed[0], $parsed[1], $parsed[2], $parsed_note);
 }
 
-
-
-
 sub print_args_info {
 	print "\nUse one of specific argument:\n";
 	print "\"-d [count]\" count of days to print.\n";
@@ -246,6 +243,8 @@ sub parse_input_args {
 	my $day = 0;
 	my $am_flag = 0;
 	
+	($year, $month, $day) = Today();	
+
 	if ($cnt == 0) {
 		print_warn_args_info();
 		exit(1);
@@ -266,7 +265,6 @@ sub parse_input_args {
 			}
 			case /-m/ {
 				if ($am_flag == 0) {
-					($year, $month, $day) = Today();	
 					$am_flag = $arg_val;
 				}
 				$days = calculate_days($year, $month, $day, $arg_val);
@@ -320,18 +318,25 @@ sub parse_input_args {
 }
 
 sub ignore_notes_before_date {
-	my $cnt = $loop_size;
-	while ($cnt) {
+	
+	while($arr_cnt < scalar @file_arr) {
 		($year_f, $month_f, $day_f, $notes_f) = parse_data($file_arr[$arr_cnt]);
 		$arr_cnt++;
-
-		if ($year > $year_f || $month > $month_f || $day > $day_f) {
-			$cnt--;	
-		} else {
-			return $cnt;
-		}
+		if ($year_f < $year) {
+			next;
+		} elsif ($year_f > $year) {
+			last;
+		} elsif ($month_f < $month) {
+			next;
+		} elsif ($month_f > $month) {
+			last;
+		} elsif ($day_f < $day) {
+			next;
+		} elsif ($day_f >= $day) {
+			last;
+		}	
 	}
-	return -1;
+	return ($year_f, $month_f, $day_f, $notes_f);
 }
 
 sub constructor {
@@ -341,11 +346,10 @@ sub constructor {
 	my $obj;
 	if ($type eq "cal_entry_tex") {
 		$obj = new Tex($fh, $translate); 
-		return $obj;
 	} else {
 		$obj = new Txt($fh, $translate);
-		return $obj;
 	}
+	return $obj;
 }
 
 #There is no PL-MA in profiles.
@@ -357,10 +361,6 @@ $calendar = Date::Calendar->new($Profiles->{'US-FL'});
 my $save_file = IO::File->new;
 
 if (length $save_path == 0) {
-	if (length $save_path != 0) {
-		print "Could not open file $save_path. Writing output";
-		print " to the console.\n";
-	}
 	*$save_file = STDOUT;
 } else {
 	open $save_file, ">$save_path" or die "Cannot create $save_path!";
