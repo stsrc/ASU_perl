@@ -187,19 +187,21 @@ sub parse_data {
 }
 
 sub print_args_info {
-	print "\nUse one of specific argument:\n";
-	print "\"-d [count]\" count of days to print.\n";
-	print "\"-w [count]\" count of weeks to print.\n";
-	print "\"-m [count]\" count of months to print.\n";
-	print "\nAdditional arguments:\n";
-	print "\"-p [path]\" path to file with notes. If parameter not passed";
-	print " path defaults to ./notes.txt.\n";
-	print "\"-s [path]\" path to save output. If paremeter not passed";
-	print " application prints to the console.\n";
-	print "\"-t [txt/tex]\" output type. txt is the default type.\n";
-	print "\"-a [yyyy.mm.dd]\" sets date from which calendar should start.";
-	print " If argument not passed, calendar starts from today.\n";
-	print "\"-pl: calendar in polish language.\n\n";
+	print "\nArgument wymagany (jeden z trzech poniżej):\n";
+	print "\"-d [liczba]\" liczba dni do wydrukowania.\n";
+	print "\"-w [liczba]\" liczba tygodni do wydrukowania.\n";
+	print "\"-m [liczba]\" liczba miesięcy do wydrykowania.\n";
+	print "\nArgumenty dodatkowe:\n";
+	print "\"-p [ścieżka]\" ścieżka do pliku z notatkami. Gdy parametr nie";
+	print " podany wczytywany jest plik ./notes.txt.\n";
+	print "\"-s [ścieżka]\" ścieżka do pliku z zapisem kalendarza. Gdy";
+	print " parametr nie podany, wydruk do konsoli.\n";
+	print "\"-t [txt/tex]\" typ kalendarza (tabelka tekstowa lub TeX'owa).";
+	print " Gdy parametr nie podany drukowana jest tabelka tekstowa.\n";
+	print "\"-a [rrrr.mm.dd]\" Data od której kalendarz ma być wydrukowa";
+	print "ny.\n Gdy argument nie jest podany kalendarz zaczyna się od dn";
+	print "ia bierzącego.\n";
+	print "\"-pl: kaneldarz z dniami tygodnia po polsku.\n\n";
 }
 
 sub print_warn_args_info {
@@ -317,7 +319,7 @@ sub parse_input_args {
 		$year, $month, $day);
 }
 
-sub ignore_notes_before_date {
+sub ignore_notes_before_actual_date {
 	
 	while($arr_cnt < scalar @file_arr) {
 		($year_f, $month_f, $day_f, $notes_f) = parse_data($file_arr[$arr_cnt]);
@@ -363,13 +365,13 @@ my $save_file = IO::File->new;
 if (length $save_path == 0) {
 	*$save_file = STDOUT;
 } else {
-	open $save_file, ">$save_path" or die "Cannot create $save_path!";
+	open $save_file, ">$save_path" or die "Nie można utworzyć pliku $save_path!";
 }
 
 @file_arr = read_file($file_path);
 $arr_cnt = 0;
 
-ignore_notes_before_date();
+ignore_notes_before_actual_date();
 
 $text_object = constructor($save_file, $type, $translate);
 $text_object->set_outputs($save_file);
@@ -394,8 +396,10 @@ for (my $i = 0; $i < $loop_size; $i++) {
 	
 	if ($day == $day_f && $month == $month_f && $year == $year_f) {
 		$notes = $notes_f;
-		($year_f, $month_f, $day_f, $notes_f) = parse_data($file_arr[$arr_cnt]);	
-		$arr_cnt++;	
+		if ($arr_cnt < scalar @file_arr) {
+			($year_f, $month_f, $day_f, $notes_f) = parse_data($file_arr[$arr_cnt]);	
+			$arr_cnt++;	
+		}
 	}
 
 	$notes = $text_object->set_nl_before_notes($notes);
