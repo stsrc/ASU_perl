@@ -139,7 +139,7 @@ sub set_nl_before_notes {
 	my $notes = $_[1];
 
 	if (length $notes ne 0) {
-		return "\n     ".$notes;
+		return "\n\t".$notes;
 	} else {
 		return $notes;
 	}
