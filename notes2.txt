@@ -1,11 +1,11 @@
-2015.10.05 NIECO STASZA NOTATKA 2.
-2015.11.04 TŁUSTY PONIEDZIAŁEK 2.
-2015.11.05 WTOREK POPIELCOWY 2.
-2015.11.12 ASU W 8-10 2.
-2015.11.13 KOLOKWIUM ASU 2.
-2016.10.05 NIECO STASZA NOTATKA.
-2016.11.04 TŁUSTY PONIEDZIAŁEK.
-2016.11.05 WTOREK POPIELCOWY.
-2016.11.12 ASU W 8-10.
-2016.11.13 KOLOKWIUM ASU.
-2017.02.13 ŚRODA POPIELCOWA.
+2015.10.31 Lorem ipsum dolor sit amet.
+2015.11.03 Sunt in culpa qui officia.
+2015.11.04 Consectetur adipiscing elit.
+2015.11.05 Nisi ut aliquid ex ea commodi.
+2015.11.12 Sed ut perspiciatis unde omnis.
+2016.10.05 Neque porro quisquam est.
+2016.10.21 Dzień Ndadaye w Burundi.
+2016.11.04 Excepteur sint occaecat.
+2016.11.05 Lorem ipsum autem vel eum.
+2016.11.12 Światowy dzień zapalenia płuc.
+2017.02.13 Światowy Dzień Radia.

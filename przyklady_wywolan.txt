@@ -1,17 +1,16 @@
-./generate_calendar -h
+./generate_calendar.pl -h
 
-./generate_calendar -d 70
-./generate_calendar -d 70 -a 2015.10.31
-./generate_calendar -a 2015.10.31 -d 70	
+./generate_calendar.pl -d 70
+./generate_calendar.pl -d 70 -a 2015.10.31
+./generate_calendar.pl -a 2015.10.31 -d 70	
 
-./generate_calendar -w 10
-./generate_calendar -w 10 -a 2015.10.31
-./generate_calendar -a 2015.10.31 -w 10
+./generate_calendar.pl -w 10
+./generate_calendar.pl -w 10 -a 2015.10.31
+./generate_calendar.pl -a 2015.10.31 -w 10
 
-./generate_calendar -m 12
-./generate_calendar -m 12 -a 2015.10.31
-./generate_calendar -a 2015.10.31 -m 12
-
+./generate_calendar.pl -m 12
+./generate_calendar.pl -m 12 -a 2015.10.31
+./generate_calendar.pl -a 2015.10.31 -m 14
 
 ./generate_calendar.pl -d 70 -p ~/programming/linux/workspace/perl/calendar/notes2.txt
 ./generate_calendar.pl -d 70 -a 2015.10.31 -p ~/programming/linux/workspace/perl/calendar/notes2.txt
@@ -26,26 +25,26 @@
 ./generate_calendar.pl -a 2015.10.31 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 12
 
 ./generate_calendar.pl -t txt -a 2015.10.31 -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt
-./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -t txt -a 2015.10.31 -w 2
+./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -t txt -a 2015.10.31 -w 3
 ./generate_calendar.pl -a 2015.10.31 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 2 -t txt
 
 ./generate_calendar.pl -t tex -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt
-./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -a 2015.10.31 -t tex -w 2
+./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -a 2015.10.31 -t tex -w 3
 ./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 2 -t tex
 
 ./generate_calendar.pl -t txt -a 2015.10.31 -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -pl
-./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -t txt -a 2015.10.31 -w 2 -pl
+./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -t txt -a 2015.10.31 -w 3 -pl
 ./generate_calendar.pl -a 2015.10.31 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 2 -t txt -pl
 
 ./generate_calendar.pl -t tex -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -pl
-./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -a 2015.10.31 -t tex -w 2 -pl
+./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -a 2015.10.31 -t tex -w 3 -pl
 ./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 2 -t tex -pl
 
 ./generate_calendar.pl -t txt -a 2015.10.31 -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -pl	-s output.txt
 ./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -s output.txt -t txt -a 2015.10.31 -w 3 -pl
-./generate_calendar.pl -s output.txt -a 2015.10.31 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 2 -t txt -pl
+./generate_calendar.pl -s output.txt -a 2015.10.31 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -m 2 -t txt -pl 
 
-./generate_calendar.pl -t tex -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -pl -s output.tex
+./generate_calendar.pl -t tex -d 14 -p ~/programming/linux/workspace/perl/calendar/notes2.txt -s output.tex
 ./generate_calendar.pl -s output.tex -p ~/programming/linux/workspace/perl/calendar/notes2.txt -a 2015.10.31 -t tex -w 3 -pl
 ./generate_calendar.pl -p ~/programming/linux/workspace/perl/calendar/notes2.txt -s output.tex -m 2 -t tex -pl
 
