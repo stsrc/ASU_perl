@@ -205,7 +205,7 @@ sub print_args_info {
 }
 
 sub print_warn_args_info {
-	print "\nWrong input arguments.\n";
+	print "\nZłe argumenty wejściowe.\n";
 	print_args_info();
 }
 
